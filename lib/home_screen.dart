@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart'; // Ensure this import is correct
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:haptic_feedback/camera_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -7,7 +7,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Home',
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -36,12 +36,12 @@ class HomeScreen extends StatelessWidget {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: Text("Bluetooth Not Available"),
-                  content: Text("Please enable Bluetooth to use this feature."),
+                  title: const  Text("Bluetooth Not Available"),
+                  content: const Text("Please enable Bluetooth to use this feature."),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text("OK"),
+                      child: const Text("OK"),
                     ),
                   ],
                 ),
@@ -51,11 +51,11 @@ class HomeScreen extends StatelessWidget {
           child: Container(
             width: 150.0,
             height: 150.0,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.blue,
               shape: BoxShape.circle,
             ),
-            child: Center(
+            child: const Center(
               child: Text(
                 'START',
                 style: TextStyle(

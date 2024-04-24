@@ -3,8 +3,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-
+import 'package:provider/provider.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:haptic_feedback/providers/obstacle_provider.dart';
 
 class CameraScreen extends StatefulWidget {
   @override
@@ -15,44 +16,29 @@ class _CameraScreenState extends State<CameraScreen> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
 
-  late FlutterTts flutterTts; // Add FlutterTts instance
+  late FlutterTts flutterTts;
 
-  playVoice(String s) async {
-    await flutterTts.setLanguage('en-US'); // Set language
-    await flutterTts.setSpeechRate(0.5); // Set speech rate
-    await flutterTts.setVolume(1.0); // Set volume
-    await flutterTts.setPitch(1.0); // Set pitch
-
-    // Speak the string
+  void playVoice(String s) async {
+    await flutterTts.setLanguage('en-US');
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setVolume(1.0);
+    await flutterTts.setPitch(1.0);
     await flutterTts.speak(s);
   }
 
-  // Add variables to track obstacle positions
-  bool obstacleLeft = false;
-  bool obstacleRight = false;
-
-// Function to start obstacle detection
-  void startObstacleDetection() {
-    //For Example
-    // Initialize a random number generator
+  void startObstacleDetection(ObstacleProvider obstacleProvider) {
     var random = Random();
-    // Simulate obstacle detection with random values
     Timer.periodic(const Duration(seconds: 5), (timer) {
-      setState(() {
-        // Simulate obstacle detection on the left
-        obstacleLeft = random.nextBool();
-        // Simulate obstacle detection on the right
-        obstacleRight = random.nextBool();
-        if (obstacleLeft == true && obstacleRight == false) {
-          playVoice('There is Obstacle in yours left, please go right');
-        } 
-        else if (obstacleRight == true && obstacleLeft == false) {
-          playVoice('There is Obstacle in yours right, please go left');
-        } 
-        else if (obstacleLeft == true && obstacleRight == true) {
-          playVoice('Please stop, obstacle ahead');
-        }
-      });
+      final bool obstacleLeft = random.nextBool();
+      final bool obstacleRight = random.nextBool();
+      obstacleProvider.updateObstacles(obstacleLeft, obstacleRight);
+      if (obstacleLeft && !obstacleRight) {
+        playVoice('There is Obstacle in yours left, please go right');
+      } else if (obstacleRight && !obstacleLeft) {
+        playVoice('There is Obstacle in yours right, please go left');
+      } else if (obstacleLeft && obstacleRight) {
+        playVoice('Please stop, obstacle ahead');
+      }
     });
   }
 
@@ -67,25 +53,26 @@ class _CameraScreenState extends State<CameraScreen> {
       );
       _initializeControllerFuture = _controller.initialize();
       _initializeControllerFuture.then((_) {
-        // Start obstacle detection once camera is initialized
-        startObstacleDetection();
+        final obstacleProvider =
+            Provider.of<ObstacleProvider>(context, listen: false);
+        startObstacleDetection(obstacleProvider);
       });
 
-      flutterTts = FlutterTts(); // Initialize FlutterTts
+      flutterTts = FlutterTts();
       setState(() {});
     });
   }
 
   @override
   void dispose() {
-    // Dispose of the FlutterTts instance when not needed
-    flutterTts.stop(); // Stop speaking
+    flutterTts.stop();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    print("build");
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -103,118 +90,127 @@ class _CameraScreenState extends State<CameraScreen> {
               );
             } else {
               final size = MediaQuery.of(context).size;
-              return Stack(
-                children: [
-                  Container(
-                    color: Colors.black,
-                    child: Center(
-                      child: AspectRatio(
-                        aspectRatio: _controller.value.aspectRatio,
-                        child: ClipRect(
-                          child: OverflowBox(
-                            alignment: Alignment.center,
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: size.width,
-                                height: size.height,
-                                child: CameraPreview(_controller),
-                              ),
+              return Stack(children: [
+                Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: ClipRect(
+                        child: OverflowBox(
+                          alignment: Alignment.center,
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: size.width,
+                              height: size.height,
+                              child: CameraPreview(_controller),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  // Add obstacle indicators
-                  if (obstacleLeft == true && obstacleRight == false)
-                    Positioned(
+                ),
+                Consumer<ObstacleProvider>(
+                    builder: (context, obstacleProvider, child) {
+                  if (obstacleProvider.obstacleLeft &&
+                      !obstacleProvider.obstacleRight) {
+                    return Positioned(
                       left: 0,
-                      top: size.height / 2 -
-                          (size.height / 2.8) / 2, // Center vertically
+                      top: size.height / 2 - (size.height / 2.8) / 2,
                       child: Container(
-                          height: size.height / 2.8,
-                          width: size.width / 2,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Colors.red, // Border color
-                              width: 2.0, // Border width
-                            ),
-                            color: Colors.transparent, // Transparent background
+                        height: size.height / 2.8,
+                        width: size.width / 2,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.red,
+                            width: 2.0,
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Text(
-                                'LEFT',
-                                style: TextStyle(
-                                  color: Colors.red, // White text
-                                  fontSize: 20.0, // Text size
-                                ),
+                          color: Colors.transparent,
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text(
+                              'LEFT',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 20.0,
                               ),
-                            ],
-                          )),
-                    ),
-                  if (obstacleRight == true && obstacleLeft == false)
-                    Positioned(
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  if (obstacleProvider.obstacleRight &&
+                      !obstacleProvider.obstacleLeft) {
+                    return Positioned(
                       right: 0,
-                      top: size.height / 2 -
-                          (size.height / 2.8) / 2, // Center vertically
+                      top: size.height / 2 - (size.height / 2.8) / 2,
                       child: Container(
-                          height: size.height / 2.8,
-                          width: size.width / 2,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Colors.red, // Border color
-                              width: 2.0, // Border width
-                            ),
-                            color: Colors.transparent, // Transparent background
+                        height: size.height / 2.8,
+                        width: size.width / 2,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.red,
+                            width: 2.0,
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Text(
-                                'RIGHT',
-                                style: TextStyle(
-                                  color: Colors.red, // White text
-                                  fontSize: 20.0, // Text size
-                                ),
+                          color: Colors.transparent,
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text(
+                              'RIGHT',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 20.0,
                               ),
-                            ],
-                          )),
-                    ),
-                  if (obstacleRight == true && obstacleLeft == true)
-                    Positioned(
-                      top: size.height / 2 -
-                          (size.height / 2.8) / 2, // Center vertically
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (obstacleProvider.obstacleLeft &&
+                      obstacleProvider.obstacleRight) {
+                    return Positioned(
+                      top: size.height / 2 - (size.height / 2.8) / 2,
                       child: Container(
-                          height: size.height / 2.8,
-                          width: size.width,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Colors.red, // Border color
-                              width: 2.0, // Border width
-                            ),
-                            color: Colors.transparent, // Transparent background
+                        height: size.height / 2.8,
+                        width: size.width,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.red,
+                            width: 2.0,
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'AHEAD',
-                                style: TextStyle(
-                                  color: Colors.red, // White text
-                                  fontSize: 20.0, // Text size
-                                ),
+                          color: Colors.transparent,
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'AHEAD',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 20.0,
                               ),
-                            ],
-                          )),
-                    ),
-                ],
-              );
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else {
+                    return const SizedBox.shrink(); // Return null widget
+                  }
+                })
+              ]);
             }
           } else {
-            return Center(
+            return const Center(
               child: CircularProgressIndicator(),
             );
           }

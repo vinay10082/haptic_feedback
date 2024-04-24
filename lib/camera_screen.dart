@@ -17,6 +17,7 @@ class _CameraScreenState extends State<CameraScreen> {
   late Future<void> _initializeControllerFuture;
 
   late FlutterTts flutterTts;
+  late Timer _obstacleDetectionTimer;
 
   void playVoice(String s) async {
     await flutterTts.setLanguage('en-US');
@@ -28,7 +29,8 @@ class _CameraScreenState extends State<CameraScreen> {
 
   void startObstacleDetection(ObstacleProvider obstacleProvider) {
     var random = Random();
-    Timer.periodic(const Duration(seconds: 5), (timer) {
+    _obstacleDetectionTimer =
+        Timer.periodic(const Duration(seconds: 5), (timer) {
       final bool obstacleLeft = random.nextBool();
       final bool obstacleRight = random.nextBool();
       obstacleProvider.updateObstacles(obstacleLeft, obstacleRight);
@@ -49,7 +51,7 @@ class _CameraScreenState extends State<CameraScreen> {
       final firstCamera = cameras.first;
       _controller = CameraController(
         firstCamera,
-        ResolutionPreset.medium,
+        ResolutionPreset.veryHigh,
       );
       _initializeControllerFuture = _controller.initialize();
       _initializeControllerFuture.then((_) {
@@ -67,6 +69,7 @@ class _CameraScreenState extends State<CameraScreen> {
   void dispose() {
     flutterTts.stop();
     _controller.dispose();
+    _obstacleDetectionTimer.cancel(); // Cancel the obstacle detection timer
     super.dispose();
   }
 
@@ -95,7 +98,7 @@ class _CameraScreenState extends State<CameraScreen> {
                   color: Colors.black,
                   child: Center(
                     child: AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
+                      aspectRatio: size.width / size.height,
                       child: ClipRect(
                         child: OverflowBox(
                           alignment: Alignment.center,
@@ -118,9 +121,9 @@ class _CameraScreenState extends State<CameraScreen> {
                       !obstacleProvider.obstacleRight) {
                     return Positioned(
                       left: 0,
-                      top: size.height / 2 - (size.height / 2.8) / 2,
+                      top: 50,
                       child: Container(
-                        height: size.height / 2.8,
+                        height: size.height - 50,
                         width: size.width / 2,
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -129,14 +132,22 @@ class _CameraScreenState extends State<CameraScreen> {
                           ),
                           color: Colors.transparent,
                         ),
-                        child: const Column(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Text(
-                              'LEFT',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 20.0,
+                            Container(
+                              width: size.width / 2,
+                              color: Colors
+                                  .red, // Set the background color of the container to red
+                              child: const Center(
+                                child: Text(
+                                  'LEFT',
+                                  style: TextStyle(
+                                    color: Colors
+                                        .white, // Set the text color to white
+                                    fontSize: 20.0,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -148,9 +159,9 @@ class _CameraScreenState extends State<CameraScreen> {
                       !obstacleProvider.obstacleLeft) {
                     return Positioned(
                       right: 0,
-                      top: size.height / 2 - (size.height / 2.8) / 2,
+                      top: 50,
                       child: Container(
-                        height: size.height / 2.8,
+                        height: size.height - 50,
                         width: size.width / 2,
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -159,14 +170,22 @@ class _CameraScreenState extends State<CameraScreen> {
                           ),
                           color: Colors.transparent,
                         ),
-                        child: const Column(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Text(
-                              'RIGHT',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 20.0,
+                            Container(
+                              width: size.width / 2,
+                              color: Colors
+                                  .red, // Set the background color of the container to red
+                              child: const Center(
+                                child: Text(
+                                  'RIGHT',
+                                  style: TextStyle(
+                                    color: Colors
+                                        .white, // Set the text color to white
+                                    fontSize: 20.0,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -178,9 +197,9 @@ class _CameraScreenState extends State<CameraScreen> {
                   if (obstacleProvider.obstacleLeft &&
                       obstacleProvider.obstacleRight) {
                     return Positioned(
-                      top: size.height / 2 - (size.height / 2.8) / 2,
+                      top: 50,
                       child: Container(
-                        height: size.height / 2.8,
+                        height: size.height - 50,
                         width: size.width,
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -189,14 +208,22 @@ class _CameraScreenState extends State<CameraScreen> {
                           ),
                           color: Colors.transparent,
                         ),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Text(
-                              'AHEAD',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 20.0,
+                            Container(
+                              width: size.width,
+                              color: Colors
+                                  .red, // Set the background color of the container to red
+                              child: const Center(
+                                child: Text(
+                                  'AHEAD',
+                                  style: TextStyle(
+                                    color: Colors
+                                        .white, // Set the text color to white
+                                    fontSize: 20.0,
+                                  ),
+                                ),
                               ),
                             ),
                           ],

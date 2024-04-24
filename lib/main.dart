@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:haptic_feedback/providers/obstacle_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:haptic_feedback/splash_screen.dart';
+
+import 'package:haptic_feedback/home_screen.dart';
+import 'package:haptic_feedback/providers/obstacle_provider.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,14 +14,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ObstacleProvider()),
-      ],
-      child: MaterialApp(
-      title: 'Haptic Feedback',
-      home: SplashScreen(), // Display your splash screen as the home screen
-      debugShowCheckedModeBanner: false,
-    )
-    );
+        providers: [
+          ChangeNotifierProvider(create: (_) => ObstacleProvider()),
+        ],
+        child: MaterialApp(
+          title: 'Haptic Feedback',
+          home: HomeScreen(),
+          debugShowCheckedModeBanner: false,
+        ));
   }
 }

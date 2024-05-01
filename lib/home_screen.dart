@@ -16,69 +16,76 @@ class HomeScreen extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.grey,
+        backgroundColor: const Color(0xFFD8C465),
         centerTitle: true, // Center the title
       ),
-      body: Column(
+      body: Stack(
         children: [
           SizedBox(
-            height: MediaQuery.of(context).size.height / 1.5,
+            height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
             child: Image.asset(
               'assets/background.png', // Replace with your image URL
               fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(
-            height: 10, // Height of the SizedBox
-          ),
-          Center(
-            child: Container(
-              width: 300.0,
-              height: 80.0,
-              decoration: BoxDecoration(
-                  color: const Color(0xFFD8C465),
-                  borderRadius: BorderRadius.circular(50)),
-              child: InkWell(
-                onTap: () async {
-                  // Initialize FlutterBlue instance
-                  FlutterBlue flutterBlue = FlutterBlue.instance;
+          Positioned(
+            right: 0,
+            left: 0,
+            bottom: 40.0, // Adjust position as needed
+            child: Center(
+              child: Material(
+                elevation: 4.0, // Add elevation for touch effect
+                borderRadius: BorderRadius.circular(100),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(100),
+                  onTap: () async {
+                    // Initialize FlutterBlue instance
+                    FlutterBlue flutterBlue = FlutterBlue.instance;
 
-                  // Check if Bluetooth is available
-                  var state = await flutterBlue.isOn;
+                    // Check if Bluetooth is available
+                    var state = await flutterBlue.isOn;
 
-                  if (state) {
-                    // Bluetooth is available, navigate to another screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CameraScreen()),
-                    );
-                  } else {
-                    // Bluetooth is not available, show an error message
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text("Bluetooth Not Available"),
-                        content: const Text(
-                            "Please enable Bluetooth to use this feature."),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("OK"),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                },
-                highlightColor: Colors.black54,
-                splashColor: Colors.black26,
-                child: const Center(
-                  child: Text(
-                    'START',
-                    style: TextStyle(
+                    if (state) {
+                      // Bluetooth is available, navigate to another screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CameraScreen()),
+                      );
+                    } else {
+                      // Bluetooth is not available, show an error message
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text("Bluetooth Not Available"),
+                          content: const Text(
+                              "Please enable Bluetooth to use this feature."),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text("OK"),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 200.0,
+                    height: 75.0,
+                    decoration: BoxDecoration(
                       color: Colors.white,
-                      fontSize: 40.0,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'START',
+                        style: TextStyle(
+                          color: Color(0xFFD8C465),
+                          fontSize: 30.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:haptic_feedback/camera_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -47,11 +48,41 @@ class HomeScreen extends StatelessWidget {
                     var state = await flutterBlue.isOn;
 
                     if (state) {
-                      // Bluetooth is available, navigate to another screen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => CameraScreen()),
-                      );
+                      // Bluetooth is available, now request permissions for camera and microphone
+                      Map<Permission, PermissionStatus> statuses = await [
+                        Permission.bluetooth,
+                        Permission.camera,
+                        Permission.microphone,
+                      ].request();
+                      // print(statuses);
+                      // Check if all permissions are granted
+                      bool allGranted = statuses.values.every(
+                          (status) => status == PermissionStatus.granted);
+
+                      if (allGranted) {
+                        // All permissions granted, proceed to open camera screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => CameraScreen()),
+                        );
+                      } else {
+                        // Permissions not granted, show an error message
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text("Permissions Required"),
+                            content: const Text(
+                                "To use feature, allow Hfeed access to your camera and microphone. Tap Settings > Permissions, and turn camera and microphone on."),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text("OK"),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                     } else {
                       // Bluetooth is not available, show an error message
                       showDialog(
@@ -59,7 +90,7 @@ class HomeScreen extends StatelessWidget {
                         builder: (context) => AlertDialog(
                           title: const Text("Bluetooth Not Available"),
                           content: const Text(
-                              "Please enable Bluetooth to use this feature."),
+                              "Please go to settings and enable Bluetooth to use this feature."),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),

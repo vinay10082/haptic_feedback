@@ -6,6 +6,11 @@
 		<string>Allow access to the camera to capture photos and videos</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Allow access to the photo library to save and retrieve photos and videos</string>
+		<key>NSBluetoothAlwaysUsageDescription</key>
+		<string>We need Bluetooth access for controlling aurdino functionality.</string>
+		<key>NSBluetoothPeripheralUsageDescription</key>
+		<string>We need Bluetooth access for controlling aurdino functionality.</string>
+
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

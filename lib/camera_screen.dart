@@ -87,155 +87,149 @@ class _CameraScreenState extends State<CameraScreen> {
         future: _initializeControllerFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.hasError) {
-              return Center(
-                child: Text('Error: ${snapshot.error}'),
-              );
-            } else {
-              final size = MediaQuery.of(context).size;
-              return Stack(children: [
-                Container(
-                  color: Colors.black,
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: size.width / size.height,
-                      child: ClipRect(
-                        child: OverflowBox(
-                          alignment: Alignment.center,
-                          child: FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width: size.width,
-                              height: size.height,
-                              child: CameraPreview(_controller),
-                            ),
+            final size = MediaQuery.of(context).size;
+            return Stack(children: [
+              Container(
+                color: Colors.black,
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: size.width / size.height,
+                    child: ClipRect(
+                      child: OverflowBox(
+                        alignment: Alignment.center,
+                        child: FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width: size.width,
+                            height: size.height,
+                            child: CameraPreview(_controller),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-                Consumer<ObstacleProvider>(
-                    builder: (context, obstacleProvider, child) {
-                  if (obstacleProvider.obstacleLeft &&
-                      !obstacleProvider.obstacleRight) {
-                    return Positioned(
-                      left: 0,
-                      top: 50,
-                      child: Container(
-                        height: size.height - 50,
-                        width: size.width / 2,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.red,
-                            width: 2.0,
-                          ),
-                          color: Colors.transparent,
+              ),
+              Consumer<ObstacleProvider>(
+                  builder: (context, obstacleProvider, child) {
+                if (obstacleProvider.obstacleLeft &&
+                    !obstacleProvider.obstacleRight) {
+                  return Positioned(
+                    left: 0,
+                    top: 50,
+                    child: Container(
+                      height: size.height - 50,
+                      width: size.width / 2,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.red,
+                          width: 2.0,
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: size.width / 2,
-                              color: Colors
-                                  .red, // Set the background color of the container to red
-                              child: const Center(
-                                child: Text(
-                                  'LEFT',
-                                  style: TextStyle(
-                                    color: Colors
-                                        .white, // Set the text color to white
-                                    fontSize: 20.0,
-                                  ),
+                        color: Colors.transparent,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: size.width / 2,
+                            color: Colors
+                                .red, // Set the background color of the container to red
+                            child: const Center(
+                              child: Text(
+                                'LEFT',
+                                style: TextStyle(
+                                  color: Colors
+                                      .white, // Set the text color to white
+                                  fontSize: 20.0,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                  if (obstacleProvider.obstacleRight &&
-                      !obstacleProvider.obstacleLeft) {
-                    return Positioned(
-                      right: 0,
-                      top: 50,
-                      child: Container(
-                        height: size.height - 50,
-                        width: size.width / 2,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.red,
-                            width: 2.0,
                           ),
-                          color: Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                if (obstacleProvider.obstacleRight &&
+                    !obstacleProvider.obstacleLeft) {
+                  return Positioned(
+                    right: 0,
+                    top: 50,
+                    child: Container(
+                      height: size.height - 50,
+                      width: size.width / 2,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.red,
+                          width: 2.0,
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: size.width / 2,
-                              color: Colors
-                                  .red, // Set the background color of the container to red
-                              child: const Center(
-                                child: Text(
-                                  'RIGHT',
-                                  style: TextStyle(
-                                    color: Colors
-                                        .white, // Set the text color to white
-                                    fontSize: 20.0,
-                                  ),
+                        color: Colors.transparent,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: size.width / 2,
+                            color: Colors
+                                .red, // Set the background color of the container to red
+                            child: const Center(
+                              child: Text(
+                                'RIGHT',
+                                style: TextStyle(
+                                  color: Colors
+                                      .white, // Set the text color to white
+                                  fontSize: 20.0,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    );
-                  }
+                    ),
+                  );
+                }
 
-                  if (obstacleProvider.obstacleLeft &&
-                      obstacleProvider.obstacleRight) {
-                    return Positioned(
-                      top: 50,
-                      child: Container(
-                        height: size.height - 50,
-                        width: size.width,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.red,
-                            width: 2.0,
-                          ),
-                          color: Colors.transparent,
+                if (obstacleProvider.obstacleLeft &&
+                    obstacleProvider.obstacleRight) {
+                  return Positioned(
+                    top: 50,
+                    child: Container(
+                      height: size.height - 50,
+                      width: size.width,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.red,
+                          width: 2.0,
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: size.width,
-                              color: Colors
-                                  .red, // Set the background color of the container to red
-                              child: const Center(
-                                child: Text(
-                                  'AHEAD',
-                                  style: TextStyle(
-                                    color: Colors
-                                        .white, // Set the text color to white
-                                    fontSize: 20.0,
-                                  ),
+                        color: Colors.transparent,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: size.width,
+                            color: Colors
+                                .red, // Set the background color of the container to red
+                            child: const Center(
+                              child: Text(
+                                'AHEAD',
+                                style: TextStyle(
+                                  color: Colors
+                                      .white, // Set the text color to white
+                                  fontSize: 20.0,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    );
-                  } else {
-                    return const SizedBox.shrink(); // Return null widget
-                  }
-                })
-              ]);
-            }
+                    ),
+                  );
+                } else {
+                  return const SizedBox.shrink(); // Return null widget
+                }
+              })
+            ]);
           } else {
             return const Center(
               child: CircularProgressIndicator(),

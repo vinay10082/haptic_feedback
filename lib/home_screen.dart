@@ -77,8 +77,17 @@ class HomeScreen extends StatelessWidget {
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context),
-                                child: const Text("OK"),
+                                child: const Text("Not now"),
                               ),
+                              TextButton(
+                                onPressed: () {
+                                  // Navigate to app settings
+                                  openAppSettings();
+                                  // then
+                                  Navigator.pop(context);
+                                },
+                                child: const Text("Settings"),
+                              )
                             ],
                           ),
                         );
@@ -94,7 +103,7 @@ class HomeScreen extends StatelessWidget {
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text("OK"),
+                              child: const Text("Okay"),
                             ),
                           ],
                         ),

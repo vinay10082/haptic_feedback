@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
         providers: [
           ChangeNotifierProvider(create: (_) => ObstacleProvider()),
         ],
-        child: MaterialApp(
+        child: const MaterialApp(
           title: 'Haptic Feedback',
           home: HomeScreen(),
           debugShowCheckedModeBanner: false,

@@ -75,7 +75,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print("build");
+    // print("build");
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(

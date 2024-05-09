@@ -22,6 +22,8 @@ class _ObjectDistanceEstimationPageState
   double maxHeight = 0.0;
   double leftToMaxHeight = 0.0;
   double widthToMaxHeight = 0.0;
+  late String obstacle = "obstacle";
+  late String obstacleProb = "";
   late FlutterTts flutterTts;
 
   void playVoice(String s) async {
@@ -31,19 +33,16 @@ class _ObjectDistanceEstimationPageState
     await flutterTts.setPitch(1.0);
     await flutterTts.speak(s);
   }
-  // playVoice('There is Obstacle in yours left, please go right');
-  // playVoice('There is Obstacle in yours right, please go left');
-  // playVoice('Please stop, obstacle ahead');
 
   Future<void> setupCamera() async {
     final cameras = await availableCameras();
     _cameraController =
-        CameraController(cameras.first, ResolutionPreset.medium);
+        CameraController(cameras.first, ResolutionPreset.veryHigh);
     await _cameraController.initialize();
     setState(() {
       _isCameraInitialized = true;
     });
-    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _cameraController.startImageStream((CameraImage image) {
         cameraImage = image;
         runModel();
@@ -101,24 +100,28 @@ class _ObjectDistanceEstimationPageState
     maxHeight = 0.0;
     leftToMaxHeight = 0.0;
     widthToMaxHeight = 0.0;
-
+    obstacle = "obstacle";
+    obstacleProb = "";
     List<Widget> boxes = recognitionsList.map((result) {
       double boxHeight = result["rect"]["h"] * screen.height;
       if (boxHeight > maxHeight) {
-        maxHeight =
-            boxHeight; // Update maxHeight if current box's height is greater
+        maxHeight = boxHeight; // Update maxHeight if current box's height is greater
         leftToMaxHeight = result["rect"]["x"] * screen.width;
         widthToMaxHeight = result["rect"]["w"] * screen.width;
+        obstacle = result['detectedClass'].toString();
+        if(obstacle.contains('?')) obstacle = "obstacle";
+        obstacleProb = ((result['confidenceInClass'] * 100).toStringAsFixed(0)).toString();
       }
 
       return Positioned(
         left: result["rect"]["x"] * screen.width,
         top: result["rect"]["y"] * screen.height,
         width: result["rect"]["w"] * screen.width,
-        height:
-            boxHeight, // Use boxHeight instead of result["rect"]["h"] * screen.height
-        child: RecognizedObjectBox(
-          result: result,
+        height: boxHeight, // Use boxHeight instead of result["rect"]["h"] * screen.height
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.red, width: 1.0),
+          ),
         ),
       );
     }).toList();
@@ -130,23 +133,21 @@ class _ObjectDistanceEstimationPageState
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     List<Widget> list = [];
-
     list.addAll(displayBoxesAroundRecognizedObjects(size));
-    if (maxHeight > 700) {
-      if (leftToMaxHeight > 170 && widthToMaxHeight < 170) {
-        playVoice('There is Obstacle in yours right, please go left');
-      } else if(leftToMaxHeight < 170 && widthToMaxHeight < 170) {
-        playVoice('There is Obstacle in yours left, please go right');
+    if (maxHeight > 650) {
+      if (leftToMaxHeight > 175 && widthToMaxHeight < 175) {
+        playVoice('$obstacle in right, please go left');
+      } else if (leftToMaxHeight < 175 && widthToMaxHeight < 175) {
+        playVoice('$obstacle in left, please go right');
       } else {
-        playVoice('Please stop, obstacle ahead');
+        playVoice('Please stop, $obstacle ahead');
       }
     }
     return Scaffold(
-        extendBodyBehindAppBar: true,
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.black,
           elevation: 0,
-          iconTheme: IconThemeData(color: Colors.white),
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: _isCameraInitialized
             ? Stack(
@@ -154,22 +155,7 @@ class _ObjectDistanceEstimationPageState
                   Container(
                     color: Colors.black,
                     child: Center(
-                      child: AspectRatio(
-                        aspectRatio: size.width / size.height,
-                        child: ClipRect(
-                          child: OverflowBox(
-                            alignment: Alignment.center,
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: size.width,
-                                height: size.height,
-                                child: CameraPreview(_cameraController),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      child: CameraPreview(_cameraController),
                     ),
                   ),
                   Stack(
@@ -180,29 +166,5 @@ class _ObjectDistanceEstimationPageState
             : const Center(
                 child: CircularProgressIndicator(),
               ));
-  }
-}
-
-class RecognizedObjectBox extends StatelessWidget {
-  final dynamic result;
-
-  const RecognizedObjectBox({super.key, required this.result});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.all(Radius.circular(10.0)),
-        border: Border.all(color: Colors.red, width: 2.0),
-      ),
-      child: Text(
-        "${result['detectedClass']} ${(result['confidenceInClass'] * 100).toStringAsFixed(0)}%",
-        style: const TextStyle(
-          backgroundColor: Colors.red,
-          color: Colors.white,
-          fontSize: 18.0,
-        ),
-      ),
-    );
   }
 }

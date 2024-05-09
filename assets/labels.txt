@@ -70,7 +70,7 @@ dining table
 unknown object
 ???
 tv
-laptop detected stay alert
+laptop
 mouse
 remote
 keyboard

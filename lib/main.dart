@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:haptic_feedback/distance_estimation_screen.dart';
 import 'package:haptic_feedback/bluetooth_screen.dart';
 import 'package:haptic_feedback/home_screen.dart';
 import 'package:haptic_feedback/providers/bluetooth_provider.dart';
@@ -17,7 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => BluetoothProvider())
+          ChangeNotifierProvider(create: (_) => BluetoothProvider()),
         ],
         child: const MaterialApp(
           title: 'Haptic Feedback',

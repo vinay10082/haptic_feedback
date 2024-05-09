@@ -1,14 +1,15 @@
+???
 person
-earphone
+bicycle
 car
 motorcycle
-fan
+airplane
 bus
 train
 truck
 boat
 traffic light
-bottle
+fire hydrant
 ???
 stop sign
 parking meter
@@ -67,7 +68,7 @@ bed
 dining table
 ???
 ???
-unknown object
+toilet
 ???
 tv
 laptop

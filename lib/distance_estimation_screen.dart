@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:image/image.dart' as imglib;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tflite_v2/tflite_v2.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
@@ -16,14 +16,12 @@ class ObjectDistanceEstimationPage extends StatefulWidget {
 class _ObjectDistanceEstimationPageState
     extends State<ObjectDistanceEstimationPage> {
   late CameraController _cameraController;
-  bool _isCameraInitialized = false;
+  late bool _cameraControllerInitialise = false;
   List<dynamic> recognitionsList = [];
-  late Timer _timer;
   double maxHeight = 0.0;
   double leftToMaxHeight = 0.0;
   double widthToMaxHeight = 0.0;
   late String obstacle = "obstacle";
-  late String obstacleProb = "";
   late FlutterTts flutterTts;
 
   void playVoice(String s) async {
@@ -40,29 +38,28 @@ class _ObjectDistanceEstimationPageState
         CameraController(cameras.first, ResolutionPreset.veryHigh);
     await _cameraController.initialize();
     setState(() {
-      _isCameraInitialized = true;
+      _cameraControllerInitialise = true;
     });
     var cameraCount = 0;
     _cameraController.startImageStream((CameraImage image) {
-      if (cameraCount % 300 == 0) {
+      if (cameraCount % 100 == 0) {
         runModel(image);
       }
       cameraCount++;
     });
   }
 
-  void runModel(CameraImage image) async {
+  void runModel(CameraImage cameraImage) async {
     final List<dynamic>? results = await Tflite.detectObjectOnFrame(
-      bytesList: image.planes.map((plane) {
-        return plane.bytes;
-      }).toList(),
-      imageHeight: image.height,
-      imageWidth: image.width,
-      imageMean: 127.5,
-      imageStd: 127.5,
-      numResultsPerClass: 1,
-      threshold: 0.4,
-    );
+        bytesList: cameraImage.planes.map((plane) {
+          return plane.bytes;
+        }).toList(),
+        imageHeight: cameraImage.height,
+        imageWidth: cameraImage.width,
+        imageMean: 127.5,
+        imageStd: 127.5,
+        numResultsPerClass: 2,
+        threshold: 0.4);
 
     setState(() {
       recognitionsList = results ?? [];
@@ -70,6 +67,7 @@ class _ObjectDistanceEstimationPageState
   }
 
   Future<void> loadModel() async {
+    Tflite.close();
     await Tflite.loadModel(
         model: "assets/ssd_mobilenet_v1_1_metadata_1.tflite",
         labels: "assets/labels.txt");
@@ -86,7 +84,6 @@ class _ObjectDistanceEstimationPageState
 
   @override
   void dispose() {
-    _timer.cancel();
     _cameraController.stopImageStream();
     flutterTts.stop();
     _cameraController.dispose();
@@ -96,78 +93,98 @@ class _ObjectDistanceEstimationPageState
   }
 
   List<Widget> displayBoxesAroundRecognizedObjects(Size screen) {
-    // Reset maxHeight for each new build
+    if (recognitionsList == null) return [];
+
+    double factorX = screen.width;
+    double factorY = screen.height;
+
+    Color colorPick = Colors.red;
+
+    // Reset for each new build
     maxHeight = 0.0;
     leftToMaxHeight = 0.0;
     widthToMaxHeight = 0.0;
     obstacle = "obstacle";
-    obstacleProb = "";
-    List<Widget> boxes = recognitionsList.map((result) {
-      double boxHeight = result["rect"]["h"] * screen.height;
+
+    return recognitionsList.map((result) {
+      double boxHeight = result["rect"]["h"] * factorY;
       if (boxHeight > maxHeight) {
         maxHeight =
             boxHeight; // Update maxHeight if current box's height is greater
-        leftToMaxHeight = result["rect"]["x"] * screen.width;
-        widthToMaxHeight = result["rect"]["w"] * screen.width;
+        leftToMaxHeight = result["rect"]["x"] * factorX;
+        widthToMaxHeight = result["rect"]["w"] * factorX;
         obstacle = result['detectedClass'].toString();
         if (obstacle.contains('?')) obstacle = "obstacle";
-        obstacleProb =
-            ((result['confidenceInClass'] * 100).toStringAsFixed(0)).toString();
       }
 
       return Positioned(
-        left: result["rect"]["x"] * screen.width,
-        top: result["rect"]["y"] * screen.height,
-        width: result["rect"]["w"] * screen.width,
-        height:
-            boxHeight, // Use boxHeight instead of result["rect"]["h"] * screen.height
+        left: result["rect"]["x"] * factorX,
+        top: result["rect"]["y"] * factorY,
+        width: result["rect"]["w"] * factorX,
+        height: result["rect"]["h"] * factorY,
         child: Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.green, width: 2.0),
+            border: Border.all(color: Colors.red, width: 1.0),
+          ),
+          child: Text(
+            "${result['detectedClass']} ${(result['confidenceInClass'] * 100).toStringAsFixed(0)}%",
+            style: TextStyle(
+              background: Paint()..color = colorPick,
+              color: Colors.black,
+              fontSize: 10.0,
+            ),
           ),
         ),
       );
     }).toList();
-
-    return boxes;
   }
 
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     List<Widget> list = [];
-    list.addAll(displayBoxesAroundRecognizedObjects(size));
-    if (maxHeight > 650) {
-      if (leftToMaxHeight > 175 && widthToMaxHeight < 175) {
-        playVoice('$obstacle in right, please go left');
-      } else if (leftToMaxHeight < 175 && widthToMaxHeight < 175) {
-        playVoice('$obstacle in left, please go right');
-      } else {
-        playVoice('Please stop, $obstacle ahead');
-      }
-    }
-    return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.black,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
+    if (_cameraControllerInitialise == false) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(
+          child: CircularProgressIndicator(),
         ),
-        body: _isCameraInitialized
-            ? Stack(
-                children: [
-                  Container(
-                    color: Colors.white,
-                    child: Center(
-                      child: CameraPreview(_cameraController),
-                    ),
-                  ),
-                  Stack(
-                    children: list,
-                  )
-                ],
-              )
-            : const Center(
-                child: CircularProgressIndicator(),
-              ));
+      );
+    } else {
+      list.add(
+        SizedBox(
+          width: size.width,
+          height: size.height,
+          child: AspectRatio(
+            aspectRatio: _cameraController.value.aspectRatio,
+            child: CameraPreview(_cameraController),
+          ),
+        ),
+      );
+      list.addAll(displayBoxesAroundRecognizedObjects(size));
+
+      if (maxHeight > 650) {
+        if (leftToMaxHeight > 175 && widthToMaxHeight < 175) {
+          playVoice('$obstacle in right, please go left');
+        } else if (leftToMaxHeight < 175 && widthToMaxHeight < 175) {
+          playVoice('$obstacle in left, please go right');
+        } else {
+          playVoice('Please stop, $obstacle ahead');
+        }
+      }
+
+      return Scaffold(
+        appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white)),
+        backgroundColor: Colors.black,
+        body: Container(
+          color: Colors.black,
+          child: Stack(
+            children: list,
+          ),
+        ),
+      );
+    }
   }
 }

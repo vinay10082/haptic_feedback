@@ -44,7 +44,7 @@ class _ObjectDistanceEstimationPageState
     });
     var cameraCount = 0;
     _cameraController.startImageStream((CameraImage image) {
-      if (cameraCount % 200 == 0) {
+      if (cameraCount % 300 == 0) {
         runModel(image);
       }
       cameraCount++;

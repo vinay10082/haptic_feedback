@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:haptic_feedback/distance_estimation_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:haptic_feedback/camera_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

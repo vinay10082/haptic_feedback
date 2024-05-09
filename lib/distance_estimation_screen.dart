@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:image/image.dart' as imglib;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:tflite_v2/tflite_v2.dart';
@@ -16,7 +17,6 @@ class _ObjectDistanceEstimationPageState
     extends State<ObjectDistanceEstimationPage> {
   late CameraController _cameraController;
   bool _isCameraInitialized = false;
-  late CameraImage cameraImage;
   List<dynamic> recognitionsList = [];
   late Timer _timer;
   double maxHeight = 0.0;
@@ -42,22 +42,22 @@ class _ObjectDistanceEstimationPageState
     setState(() {
       _isCameraInitialized = true;
     });
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      _cameraController.startImageStream((CameraImage image) {
-        cameraImage = image;
-        runModel();
-        _cameraController.stopImageStream();
-      });
+    var cameraCount = 0;
+    _cameraController.startImageStream((CameraImage image) {
+      if (cameraCount % 200 == 0) {
+        runModel(image);
+      }
+      cameraCount++;
     });
   }
 
-  void runModel() async {
+  void runModel(CameraImage image) async {
     final List<dynamic>? results = await Tflite.detectObjectOnFrame(
-      bytesList: cameraImage.planes.map((plane) {
+      bytesList: image.planes.map((plane) {
         return plane.bytes;
       }).toList(),
-      imageHeight: cameraImage.height,
-      imageWidth: cameraImage.width,
+      imageHeight: image.height,
+      imageWidth: image.width,
       imageMean: 127.5,
       imageStd: 127.5,
       numResultsPerClass: 1,
@@ -105,22 +105,25 @@ class _ObjectDistanceEstimationPageState
     List<Widget> boxes = recognitionsList.map((result) {
       double boxHeight = result["rect"]["h"] * screen.height;
       if (boxHeight > maxHeight) {
-        maxHeight = boxHeight; // Update maxHeight if current box's height is greater
+        maxHeight =
+            boxHeight; // Update maxHeight if current box's height is greater
         leftToMaxHeight = result["rect"]["x"] * screen.width;
         widthToMaxHeight = result["rect"]["w"] * screen.width;
         obstacle = result['detectedClass'].toString();
-        if(obstacle.contains('?')) obstacle = "obstacle";
-        obstacleProb = ((result['confidenceInClass'] * 100).toStringAsFixed(0)).toString();
+        if (obstacle.contains('?')) obstacle = "obstacle";
+        obstacleProb =
+            ((result['confidenceInClass'] * 100).toStringAsFixed(0)).toString();
       }
 
       return Positioned(
         left: result["rect"]["x"] * screen.width,
         top: result["rect"]["y"] * screen.height,
         width: result["rect"]["w"] * screen.width,
-        height: boxHeight, // Use boxHeight instead of result["rect"]["h"] * screen.height
+        height:
+            boxHeight, // Use boxHeight instead of result["rect"]["h"] * screen.height
         child: Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.red, width: 1.0),
+            border: Border.all(color: Colors.green, width: 2.0),
           ),
         ),
       );
@@ -153,7 +156,7 @@ class _ObjectDistanceEstimationPageState
             ? Stack(
                 children: [
                   Container(
-                    color: Colors.black,
+                    color: Colors.white,
                     child: Center(
                       child: CameraPreview(_cameraController),
                     ),

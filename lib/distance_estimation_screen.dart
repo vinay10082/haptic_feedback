@@ -28,7 +28,7 @@ class _ObjectDistanceEstimationPageState
 
   void playVoice(String s) async {
     await flutterTts.setLanguage('en-US');
-    await flutterTts.setSpeechRate(0.8);
+    await flutterTts.setSpeechRate(0.75);
     await flutterTts.setVolume(1.0);
     await flutterTts.setPitch(1.0);
     await flutterTts.speak(s);
@@ -37,7 +37,7 @@ class _ObjectDistanceEstimationPageState
   Future<void> setupCamera() async {
     final cameras = await availableCameras();
     _cameraController =
-        CameraController(cameras.first, ResolutionPreset.low);
+        CameraController(cameras.first, ResolutionPreset.medium);
     await _cameraController.initialize();
     setState(() {
       _cameraControllerInitialise = true;
@@ -60,7 +60,7 @@ class _ObjectDistanceEstimationPageState
         imageWidth: cameraImage.width,
         imageMean: 127.5,
         imageStd: 127.5,
-        numResultsPerClass: 2,
+        numResultsPerClass: 1,
         threshold: 0.4);
 
     setState(() {
@@ -80,6 +80,7 @@ class _ObjectDistanceEstimationPageState
         maxObstacleProbTop = result["rect"]["y"] * size.height;
         maxObstacleProbLeft = result["rect"]["x"] * size.width;
         obstacle = result['detectedClass'].toString();
+        if(obstacle.contains('?')) obstacle = 'obstacle';
       }
     }
   }
@@ -122,13 +123,16 @@ class _ObjectDistanceEstimationPageState
     } else {
       size = MediaQuery.of(context).size;
       Color colorPick = Colors.green;
+      //tan(theta) = obstaclelength / 2 * focal length(measured by scale) ---eq.1
+      //tan(theta) = 4 * size.width / 2 * distance ---eq.2
+      double distance = (4 * size.width * (7.25)) / (maxObstacleProbWidth);
 
-      if (maxObstacleProbHeight > 450) {
+      if (distance < 50 || maxObstacleProbHeight >= size.height - 100) {
         colorPick = Colors.red;
 
-        if (maxObstacleProbLeft > 175 && maxObstacleProbWidth < 175) {
+        if (maxObstacleProbLeft >= (size.width/2) && maxObstacleProbWidth <= (size.width/2)) {
           playVoice('$obstacle in right, please go left');
-        } else if (maxObstacleProbLeft < 175 && maxObstacleProbWidth < 175) {
+        } else if (maxObstacleProbLeft <= 10 && maxObstacleProbWidth <= (size.width/2)) {
           playVoice('$obstacle in left, please go right');
         } else {
           playVoice('Please stop, $obstacle ahead');
@@ -156,18 +160,33 @@ class _ObjectDistanceEstimationPageState
                 left: maxObstacleProbLeft,
                 top: maxObstacleProbTop,
                 width: maxObstacleProbWidth,
-                height: maxObstacleProbHeight,
+                height: maxObstacleProbHeight - 100,
                 child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: colorPick, width: 1.0),
+                    border: Border.all(color: colorPick, width: 3.0),
                   ),
-                  child: Text(
-                    "$obstacle ${(maxObstacleProb*100).toStringAsFixed(0)}%",
-                    style: TextStyle(
-                      background: Paint()..color = colorPick,
-                      color: Colors.black,
-                      fontSize: 10.0,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "$obstacle ${(maxObstacleProb*100).toStringAsFixed(0)}%",
+                        style: TextStyle(
+                          background: Paint()..color = colorPick,
+                          color: Colors.white,
+                          fontSize: maxObstacleProbWidth / 35,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "Distance: ${distance.toStringAsFixed(0)} cm",
+                        style: TextStyle(
+                          background: Paint()..color = colorPick,
+                          color: Colors.white,
+                          fontSize: maxObstacleProbWidth / 35,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

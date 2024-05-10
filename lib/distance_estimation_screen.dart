@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:haptic_feedback/providers/obstacle_detection_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:tflite_v2/tflite_v2.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
@@ -17,18 +19,12 @@ class _ObjectDistanceEstimationPageState
   late CameraController _cameraController;
   late bool _cameraControllerInitialise = false;
   List<dynamic> recognitionsList = [];
-  double maxObstacleProb = 0.0;
-  double maxObstacleProbHeight = 0.0;
-  double maxObstacleProbWidth = 0.0;
-  double maxObstacleProbTop = 0.0;
-  double maxObstacleProbLeft = 0.0;
-  late String obstacle = "obstacle";
-  late Size size;
   late FlutterTts flutterTts;
+  late Size screen;
 
   void playVoice(String s) async {
     await flutterTts.setLanguage('en-US');
-    await flutterTts.setSpeechRate(0.75);
+    await flutterTts.setSpeechRate(0.7);
     await flutterTts.setVolume(1.0);
     await flutterTts.setPitch(1.0);
     await flutterTts.speak(s);
@@ -66,22 +62,38 @@ class _ObjectDistanceEstimationPageState
     setState(() {
       recognitionsList = results ?? [];
     });
-    maxObstacleProb = 0.0;
-    maxObstacleProbHeight = 0.0;
-    maxObstacleProbWidth = 0.0;
-    maxObstacleProbTop = 0.0;
-    maxObstacleProbLeft = 0.0;
-    obstacle = "obstacle";
+
+    //finding obstacle in image
+    double maxObstacleProb = 0.0;
+    double maxObstacleProbHeight = 0.0;
+    double maxObstacleProbWidth = 0.0;
+    double maxObstacleProbTop = 0.0;
+    double maxObstacleProbLeft = 0.0;
+    String obstacle = "obstacle";
+
     for (dynamic result in recognitionsList) {
       if (maxObstacleProb < result['confidenceInClass']) {
         maxObstacleProb = result['confidenceInClass'];
-        maxObstacleProbHeight = result["rect"]["h"] * size.height;
-        maxObstacleProbWidth = result["rect"]["w"] * size.width;
-        maxObstacleProbTop = result["rect"]["y"] * size.height;
-        maxObstacleProbLeft = result["rect"]["x"] * size.width;
+        maxObstacleProbHeight = result["rect"]["h"] * screen.height;
+        maxObstacleProbWidth = result["rect"]["w"] * screen.width;
+        maxObstacleProbTop = result["rect"]["y"] * screen.height;
+        maxObstacleProbLeft = result["rect"]["x"] * screen.width;
         obstacle = result['detectedClass'].toString();
-        if(obstacle.contains('?')) obstacle = 'obstacle';
+        if (obstacle.contains('?')) obstacle = 'obstacle';
       }
+    }
+
+    // Call updateDetection method of the ObstacleDetectionProvider
+    if (mounted) {
+      Provider.of<ObstacleDetectionProvider>(context, listen: false)
+          .updateDetection(
+        maxObstacleProb,
+        maxObstacleProbHeight,
+        maxObstacleProbWidth,
+        maxObstacleProbTop,
+        maxObstacleProbLeft,
+        obstacle,
+      );
     }
   }
 
@@ -121,79 +133,79 @@ class _ObjectDistanceEstimationPageState
         ),
       );
     } else {
-      size = MediaQuery.of(context).size;
-      Color colorPick = Colors.green;
-      //tan(theta) = obstaclelength / 2 * focal length(measured by scale) ---eq.1
-      //tan(theta) = 4 * size.width / 2 * distance ---eq.2
-      double distance = (4 * size.width * (7.25)) / (maxObstacleProbWidth);
-
-      if (distance < 50 || maxObstacleProbHeight >= size.height - 100) {
-        colorPick = Colors.red;
-
-        if (maxObstacleProbLeft >= (size.width/2) && maxObstacleProbWidth <= (size.width/2)) {
-          playVoice('$obstacle in right, please go left');
-        } else if (maxObstacleProbLeft <= 10 && maxObstacleProbWidth <= (size.width/2)) {
-          playVoice('$obstacle in left, please go right');
-        } else {
-          playVoice('Please stop, $obstacle ahead');
-        }
-      }
-
+      print('>>>>>>>>build');
+      screen = MediaQuery.of(context).size;
       return Scaffold(
-        appBar: AppBar(
-            backgroundColor: Colors.black,
-            iconTheme: const IconThemeData(color: Colors.white)),
-        backgroundColor: Colors.black,
-        body: Container(
-          color: Colors.black,
-          child: Stack(
-            children: [
-              SizedBox(
-                width: size.width,
-                height: size.height,
-                child: AspectRatio(
-                  aspectRatio: _cameraController.value.aspectRatio,
-                  child: CameraPreview(_cameraController),
-                ),
-              ),
-              Positioned(
-                left: maxObstacleProbLeft,
-                top: maxObstacleProbTop,
-                width: maxObstacleProbWidth,
-                height: maxObstacleProbHeight - 100,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: colorPick, width: 3.0),
+          appBar: AppBar(
+              backgroundColor: Colors.black,
+              iconTheme: const IconThemeData(color: Colors.white)),
+          backgroundColor: Colors.black,
+          body: Container(
+              color: Colors.black,
+              child: Consumer<ObstacleDetectionProvider>(
+                  builder: (context, value, _) {
+                Size size = MediaQuery.of(context).size;
+                Color colorPick = Colors.green;
+                //tan(theta) = obstaclelength / 2 * focal length(measured by scale) ---eq.1
+                //tan(theta) = 4 * size.width / 2 * distance ---eq.2
+                double distance =
+                    (4 * size.width * (7.25)) / (value.maxObstacleProbWidth);
+
+                if (distance < 35 ||
+                    value.maxObstacleProbHeight >= size.height - 100) {
+                  colorPick = Colors.red;
+
+                  if (value.maxObstacleProbLeft >= (size.width / 2) &&
+                      value.maxObstacleProbWidth <= (size.width / 2)) {
+                    playVoice('${value.obstacle} in right, please go left');
+                  } else if (value.maxObstacleProbLeft <= 10 &&
+                      value.maxObstacleProbWidth <= (size.width / 2)) {
+                    playVoice('${value.obstacle} in left, please go right');
+                  } else {
+                    playVoice('Please stop, ${value.obstacle} ahead');
+                  }
+                }
+                return Stack(children: [
+                  SizedBox(
+                    width: size.width,
+                    height: size.height,
+                    child: AspectRatio(
+                      aspectRatio: _cameraController.value.aspectRatio,
+                      child: CameraPreview(_cameraController),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "$obstacle ${(maxObstacleProb*100).toStringAsFixed(0)}%",
-                        style: TextStyle(
-                          background: Paint()..color = colorPick,
-                          color: Colors.white,
-                          fontSize: maxObstacleProbWidth / 35,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "Distance: ${distance.toStringAsFixed(0)} cm",
-                        style: TextStyle(
-                          background: Paint()..color = colorPick,
-                          color: Colors.white,
-                          fontSize: maxObstacleProbWidth / 35,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+                  Positioned(
+                      left: value.maxObstacleProbLeft,
+                      top: value.maxObstacleProbTop,
+                      width: value.maxObstacleProbWidth,
+                      height: value.maxObstacleProbHeight - 100,
+                      child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: colorPick, width: 3.0),
+                          ),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${value.obstacle} ${(value.maxObstacleProb * 100).toStringAsFixed(0)}%",
+                                  style: TextStyle(
+                                    background: Paint()..color = colorPick,
+                                    color: Colors.white,
+                                    fontSize: value.maxObstacleProbWidth / 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                    "Distance: ${distance.toStringAsFixed(0)} cm",
+                                    style: TextStyle(
+                                      background: Paint()..color = colorPick,
+                                      color: Colors.white,
+                                      fontSize: value.maxObstacleProbWidth / 20,
+                                      fontWeight: FontWeight.bold,
+                                    ))
+                              ])))
+                ]);
+              })));
     }
   }
 }

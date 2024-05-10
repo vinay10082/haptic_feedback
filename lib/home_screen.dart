@@ -64,7 +64,7 @@ class HomeScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => ObjectDistanceEstimationPage()),
+                              builder: (context) => const ObjectDistanceEstimationPage()),
                         );
                       } else {
                         // Permissions not granted, show an error message

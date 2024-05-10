@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:haptic_feedback/providers/obstacle_detection_provider.dart';
-
-import 'package:haptic_feedback/bluetooth_screen.dart';
 import 'package:haptic_feedback/home_screen.dart';
 
 void main() {

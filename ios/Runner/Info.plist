@@ -10,6 +10,12 @@
 		<string>We need Bluetooth access for controlling aurdino functionality.</string>
 		<key>NSBluetoothPeripheralUsageDescription</key>
 		<string>We need Bluetooth access for controlling aurdino functionality.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Need Location permission</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>Need Location permission</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Need Location permission</string>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

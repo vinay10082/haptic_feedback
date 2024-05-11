@@ -1,91 +1,91 @@
 ???
 person
-bicycle
+object
 car
 motorcycle
-airplane
-bus
-train
-truck
-boat
-traffic light
-fire hydrant
+fan
 ???
-stop sign
-parking meter
+object
+object
+object
+object
+bottle
+???
+object
+object
 bench
-bird
-cat
-dog
-horse
-sheep
-cow
-elephant
-bear
-zebra
-giraffe
+object
+object
+object
+object
+object
+object
+person
+???
+object
+???
 ???
 backpack
-umbrella
 ???
 ???
-handbag
-tie
+???
+bag
+???
 suitcase
-frisbee
-skis
-snowboard
-sports ball
-kite
-baseball bat
-baseball glove
-skateboard
-surfboard
+fan
+???
+???
+???
+???
+bat
+glove
+board
+board
 tennis racket
 bottle
 ???
-wine glass
-cup
-fork
-knife
-spoon
-bowl
-banana
-apple
+glass
+object
+object
+object
+object
+round object
+object
+object
 sandwich
 orange
-broccoli
+object
 carrot
-hot dog
+object
 pizza
-donut
-cake
+object
+object
 chair
 couch
-potted plant
+plant
 bed
 ???
-dining table
+table
 ???
 ???
-toilet
+object
 ???
 tv
 laptop
 mouse
-remote
+object
 keyboard
-cell phone
-microwave
-oven
-toaster
+phone
+object
+object
+object
 sink
-refrigerator
+door
 ???
 book
 clock
-vase
-scissors
-teddy bear
-hair drier
-toothbrush
+object
+object
+object
+object
+object

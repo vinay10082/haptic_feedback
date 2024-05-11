@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import 'package:haptic_feedback/bluetooth_screen.dart';
 import 'package:haptic_feedback/distance_estimation_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -42,23 +41,28 @@ class HomeScreen extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(100),
                   onTap: () async {
-                    FlutterBluetoothSerial bluetooth = FlutterBluetoothSerial.instance;
+                    FlutterBluetoothSerial bluetooth =
+                        FlutterBluetoothSerial.instance;
                     BluetoothState bluetoothState = await bluetooth.state;
+                    // Bluetooth is available, now request permissions for camera and microphone
+                    Map<Permission, PermissionStatus> statuses = await [
+                      Permission.bluetooth,
+                      Permission.bluetoothAdvertise,
+                      Permission.bluetoothConnect,
+                      Permission.bluetoothScan,
+                      Permission.camera,
+                      Permission.microphone,
+                    ].request();
+                    // print(statuses);
+                    // Check if all permissions are granted
+                    bool allGranted = statuses.values
+                        .every((status) => status == PermissionStatus.granted);
 
-                    if (bluetoothState == BluetoothState.STATE_ON) {
-                      // Bluetooth is available, now request permissions for camera and microphone
-                      Map<Permission, PermissionStatus> statuses = await [
-                        Permission.bluetooth,
-                        Permission.camera,
-                        Permission.microphone,
-                      ].request();
-                      // print(statuses);
-                      // Check if all permissions are granted
-                      bool allGranted = statuses.values.every(
-                          (status) => status == PermissionStatus.granted);
-
-                      if (allGranted) {
-                        // All permissions granted, proceed to open camera screen
+                    if (allGranted) {
+                      // All permissions granted,
+                      await bluetooth.requestEnable();
+                      if (bluetoothState == BluetoothState.STATE_ON) {
+                        //open Detection screen
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -66,39 +70,16 @@ class HomeScreen extends StatelessWidget {
                                   const detectNearObjScreen()),
                         );
                       } else {
-                        // Permissions not granted, show an error message
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text("Permissions Required"),
-                            content: const Text(
-                                "To use feature, allow Hfeed access to your camera and microphone. Tap Settings > Permissions, and turn camera and microphone on."),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text("Not now"),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  // Navigate to app settings
-                                  openAppSettings();
-                                  // then
-                                  Navigator.pop(context);
-                                },
-                                child: const Text("Settings"),
-                              )
-                            ],
-                          ),
-                        );
+                        await bluetooth.requestEnable();
                       }
                     } else {
-                      // Bluetooth is not available, show an error message
+                      // Permissions not granted, show an error message
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text("Bluetooth Not Available"),
+                          title: const Text("Permissions Required"),
                           content: const Text(
-                              "Please go to settings and enable Bluetooth to use this feature."),
+                              "To use feature, allow Hfeed access to your camera and microphone. Tap Settings > Permissions, and turn camera and microphone on."),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
@@ -107,7 +88,7 @@ class HomeScreen extends StatelessWidget {
                             TextButton(
                               onPressed: () {
                                 // Navigate to app settings
-                                FlutterBluetoothSerial.instance.openSettings();
+                                openAppSettings();
                                 // then
                                 Navigator.pop(context);
                               },

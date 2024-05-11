@@ -63,7 +63,7 @@ class HomeScreen extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                               builder: (context) =>
-                                  const BluetoothScreen()),
+                                  const detectNearObjScreen()),
                         );
                       } else {
                         // Permissions not granted, show an error message

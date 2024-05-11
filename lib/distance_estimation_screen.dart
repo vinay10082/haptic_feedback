@@ -6,16 +6,16 @@ import 'package:provider/provider.dart';
 import 'package:tflite_v2/tflite_v2.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-class ObjectDistanceEstimationPage extends StatefulWidget {
-  const ObjectDistanceEstimationPage({super.key});
+class detectNearObjScreen extends StatefulWidget {
+  const detectNearObjScreen({super.key});
 
   @override
-  State<ObjectDistanceEstimationPage> createState() =>
-      _ObjectDistanceEstimationPageState();
+  State<detectNearObjScreen> createState() =>
+      _detectNearObjScreenState();
 }
 
-class _ObjectDistanceEstimationPageState
-    extends State<ObjectDistanceEstimationPage> {
+class _detectNearObjScreenState
+    extends State<detectNearObjScreen> {
   late CameraController _cameraController;
   late bool _cameraControllerInitialise = false;
   List<dynamic> recognitionsList = [];
@@ -133,7 +133,7 @@ class _ObjectDistanceEstimationPageState
         ),
       );
     } else {
-      print('>>>>>>>>build');
+      // print('>>>>>>>>build');
       screen = MediaQuery.of(context).size;
       return Scaffold(
           appBar: AppBar(
@@ -150,9 +150,8 @@ class _ObjectDistanceEstimationPageState
                 //tan(theta) = 4 * size.width / 2 * distance ---eq.2
                 double distance =
                     (4 * size.width * (7.25)) / (value.maxObstacleProbWidth);
-
-                if (distance < 35 ||
-                    value.maxObstacleProbHeight >= size.height - 100) {
+                // distance < 35;
+                if (value.maxObstacleProbHeight >= size.height - 100) {
                   colorPick = Colors.red;
 
                   if (value.maxObstacleProbLeft >= (size.width / 2) &&

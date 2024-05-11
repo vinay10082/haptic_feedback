@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:haptic_feedback/bluetooth_screen.dart';
 import 'package:haptic_feedback/distance_estimation_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -41,13 +42,10 @@ class HomeScreen extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(100),
                   onTap: () async {
-                    // Initialize FlutterBlue instance
-                    FlutterBlue flutterBlue = FlutterBlue.instance;
+                    FlutterBluetoothSerial bluetooth = FlutterBluetoothSerial.instance;
+                    BluetoothState bluetoothState = await bluetooth.state;
 
-                    // Check if Bluetooth is available
-                    var state = await flutterBlue.isOn;
-
-                    if (state) {
+                    if (bluetoothState == BluetoothState.STATE_ON) {
                       // Bluetooth is available, now request permissions for camera and microphone
                       Map<Permission, PermissionStatus> statuses = await [
                         Permission.bluetooth,
@@ -64,7 +62,8 @@ class HomeScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const ObjectDistanceEstimationPage()),
+                              builder: (context) =>
+                                  const BluetoothScreen()),
                         );
                       } else {
                         // Permissions not granted, show an error message
@@ -103,8 +102,17 @@ class HomeScreen extends StatelessWidget {
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text("Okay"),
+                              child: const Text("Not now"),
                             ),
+                            TextButton(
+                              onPressed: () {
+                                // Navigate to app settings
+                                FlutterBluetoothSerial.instance.openSettings();
+                                // then
+                                Navigator.pop(context);
+                              },
+                              child: const Text("Settings"),
+                            )
                           ],
                         ),
                       );

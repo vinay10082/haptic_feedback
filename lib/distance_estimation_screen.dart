@@ -54,13 +54,13 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
     await _cameraController.initialize();
     setState(() {
       _cameraControllerInitialise = true;
-      // });
-      // var cameraCount = 0;
-      // _cameraController.startImageStream((CameraImage image) {
-      //   if (cameraCount % 50 == 0) {
-      //     runModel(image);
-      //   }
-      //   cameraCount++;
+      });
+      var cameraCount = 0;
+      _cameraController.startImageStream((CameraImage image) {
+        if (cameraCount % 50 == 0) {
+          runModel(image);
+        }
+        cameraCount++;
     });
   }
 

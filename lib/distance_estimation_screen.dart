@@ -38,11 +38,11 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
   List<BluetoothDevice> _devicesList = [];
   BluetoothDevice? _device;
   bool _connected = false;
-  bool _isButtonUnavailable = false;
+  bool _isButtonUnavailable = true;
 
   void playVoice(String s) async {
     await flutterTts.setLanguage('en-US');
-    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setSpeechRate(0.7);
     await flutterTts.setVolume(1.0);
     await flutterTts.setPitch(1.0);
     await flutterTts.speak(s);
@@ -50,18 +50,17 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
 
   Future<void> setupCamera() async {
     final cameras = await availableCameras();
-    _cameraController =
-        CameraController(cameras.first, ResolutionPreset.medium);
+    _cameraController = CameraController(cameras.first, ResolutionPreset.low);
     await _cameraController.initialize();
     setState(() {
       _cameraControllerInitialise = true;
-    });
-    var cameraCount = 0;
-    _cameraController.startImageStream((CameraImage image) {
-      if (cameraCount % 100 == 0) {
-        runModel(image);
-      }
-      cameraCount++;
+      // });
+      // var cameraCount = 0;
+      // _cameraController.startImageStream((CameraImage image) {
+      //   if (cameraCount % 50 == 0) {
+      //     runModel(image);
+      //   }
+      //   cameraCount++;
     });
   }
 
@@ -175,53 +174,44 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
   }
 
   void _connect() async {
-    setState(() {
-      _isButtonUnavailable = true;
-    });
-    if (_device == null) {
-      show('No device selected');
-    } else {
-      if (!isConnected) {
-        try {
-          BluetoothConnection? newConnection =
-              await BluetoothConnection.toAddress(_device!.address);
-          show('Connected to the device');
-          setState(() {
-            _connected = true;
-            connection = newConnection;
-          });
-          connection!.input!.listen(null).onDone(() {
-            if (isDisconnecting) {
-              show('Disconnecting locally!');
-            } else {
-              show('Disconnected remotely!');
-            }
-            if (mounted) {
-              setState(() {});
-            }
-          });
-        } catch (error) {
-          print('>>>>>>>Cannot connect, exception occurred');
-          print('>>>>>>>$error');
-          show('Device Not found');
-        }
-        setState(() => _isButtonUnavailable = false);
+    setState(() => _isButtonUnavailable = false);
+    if (!isConnected) {
+      try {
+        BluetoothConnection? newConnection =
+            await BluetoothConnection.toAddress(_device!.address);
+        show('Connected to the device');
+        setState(() {
+          _connected = true;
+          connection = newConnection;
+        });
+        connection!.input!.listen(null).onDone(() {
+          if (isDisconnecting) {
+            show('Disconnecting locally!');
+          } else {
+            show('Disconnected remotely!');
+          }
+          if (mounted) {
+            setState(() {});
+          }
+        });
+
+      } catch (error) {
+        print('>>>>>>>Cannot connect, exception occurred');
+        print('>>>>>>>$error');
+        show('Device Not found');
       }
+      setState(() => _isButtonUnavailable = true);
     }
-    print('>>>>>>>>$isConnected');
   }
 
   void _disconnect() async {
-    setState(() {
-      _isButtonUnavailable = true;
-      _deviceState = 0;
-    });
+    setState(() => _isButtonUnavailable = false);
     await connection!.close();
     show('Device disconnected');
     if (!connection!.isConnected) {
       setState(() {
         _connected = false;
-        _isButtonUnavailable = false;
+        _isButtonUnavailable = true;
       });
     }
   }
@@ -239,7 +229,7 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
         _bluetoothState = state;
       });
     });
-    _deviceState = 0;
+    _deviceState = 1;
     enableBluetooth();
     FlutterBluetoothSerial.instance
         .onStateChanged()
@@ -252,7 +242,6 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
         getPairedDevices();
       });
     });
-
     setState(() {});
   }
 
@@ -319,11 +308,11 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
               panel: Column(
                 children: <Widget>[
                   Visibility(
-                    visible: _isButtonUnavailable &&
+                    visible: _isButtonUnavailable == false &&
                         _bluetoothState == BluetoothState.STATE_ON,
                     child: const LinearProgressIndicator(
-                      backgroundColor: Color(0xFFD8C465),
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                      backgroundColor: Colors.white,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
                     ),
                   ),
                   Padding(
@@ -340,14 +329,14 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                                   ),
                                 ),
                                 TextButton(
-                                  onPressed: () {},
-                                  child: const Text("ON",
-                                      style: TextStyle(color: Colors.grey)),
-                                ),
-                                TextButton(
-                                  onPressed: () {},
-                                  child: const Text("OFF",
-                                      style: TextStyle(color: Colors.red)),
+                                  onPressed: () {
+                                    setState(() {
+                                      _deviceState = (_deviceState == 1) ? 0 : 1;
+                                    });
+                                  },
+                                  child: (_deviceState == 1)
+                                  ? const Text("ON", style: TextStyle(color: Colors.green))
+                                  : const Text("OFF", style: TextStyle(color: Colors.red))
                                 ),
                               ],
                             )
@@ -374,8 +363,11 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                           value: _devicesList.isNotEmpty ? _device : null,
                         ),
                         ElevatedButton(
-                          onPressed: _isButtonUnavailable
-                              ? null
+                          onPressed: (_isButtonUnavailable)
+                              ? () {
+                                  (_device == null) ? show('No device selected')
+                                  : _connect();
+                                }
                               : (_connected ? _disconnect : _connect),
                           style: ButtonStyle(
                             backgroundColor: WidgetStateProperty.all<Color>(

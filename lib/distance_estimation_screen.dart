@@ -188,7 +188,7 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
           connection = newConnection;
         });
         connection!.input!.listen((Uint8List data) {
-          print('>>>>>>>>>Data incoming: ${ascii.decode(data)}');
+          print('>>>>>>>>Data incoming: ${ascii.decode(data)}');
         }).onDone(() {
           if (isDisconnecting) {
             show('Disconnecting locally!');
@@ -434,7 +434,7 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                     double y = value.maxObstacleProbTop/size.height;
                     double distance =  sqrt(x*x + y*y)*100 + 5;
 
-                    if (distance < 35 || value.maxObstacleProbHeight >= size.height - 130) {
+                    if ((distance <= 35 && distance >= 10) || value.maxObstacleProbHeight >= size.height - 130) {
                       colorPick = Colors.red;
 
                       if (value.maxObstacleProbLeft >= (size.width / 2) &&

@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -54,7 +57,7 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
     await _cameraController.initialize();
     setState(() {
       _cameraControllerInitialise = true;
-      });
+    });
       var cameraCount = 0;
       _cameraController.startImageStream((CameraImage image) {
         if (cameraCount % 50 == 0) {
@@ -184,17 +187,23 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
           _connected = true;
           connection = newConnection;
         });
-        connection!.input!.listen(null).onDone(() {
+        connection!.input!.listen((Uint8List data) {
+          print('>>>>>>>>>Data incoming: ${ascii.decode(data)}');
+        }).onDone(() {
           if (isDisconnecting) {
             show('Disconnecting locally!');
           } else {
+            setState(() {
+              _connected = false;
+            });
             show('Disconnected remotely!');
           }
+
           if (mounted) {
             setState(() {});
           }
         });
-
+        // Timer(const Duration(milliseconds: 20), () => _listenForData(connection!));
       } catch (error) {
         print('>>>>>>>Cannot connect, exception occurred');
         print('>>>>>>>$error');
@@ -329,15 +338,19 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                                   ),
                                 ),
                                 TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _deviceState = (_deviceState == 1) ? 0 : 1;
-                                    });
-                                  },
-                                  child: (_deviceState == 1)
-                                  ? const Text("ON", style: TextStyle(color: Colors.green))
-                                  : const Text("OFF", style: TextStyle(color: Colors.red))
-                                ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _deviceState =
+                                            (_deviceState == 1) ? 0 : 1;
+                                      });
+                                    },
+                                    child: (_deviceState == 1)
+                                        ? const Text("ON",
+                                            style:
+                                                TextStyle(color: Colors.green))
+                                        : const Text("OFF",
+                                            style:
+                                                TextStyle(color: Colors.red))),
                               ],
                             )
                           : const Center(
@@ -365,8 +378,9 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                         ElevatedButton(
                           onPressed: (_isButtonUnavailable)
                               ? () {
-                                  (_device == null) ? show('No device selected')
-                                  : _connect();
+                                  (_device == null)
+                                      ? show('No device selected')
+                                      : _connect();
                                 }
                               : (_connected ? _disconnect : _connect),
                           style: ButtonStyle(
@@ -416,10 +430,11 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                     Size size = MediaQuery.of(context).size;
                     Color colorPick = Colors.green;
 
-                    double distance = (4 * size.width * (7.25)) /
-                        (value.maxObstacleProbWidth);
+                    double x = value.maxObstacleProbLeft/size.width;
+                    double y = value.maxObstacleProbTop/size.height;
+                    double distance =  sqrt(x*x + y*y)*100 + 5;
 
-                    if (value.maxObstacleProbHeight >= size.height - 100) {
+                    if (distance < 35 || value.maxObstacleProbHeight >= size.height - 130) {
                       colorPick = Colors.red;
 
                       if (value.maxObstacleProbLeft >= (size.width / 2) &&
@@ -465,7 +480,7 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                                       ),
                                     ),
                                     Text(
-                                        "Distance: ${distance.toStringAsFixed(0)} cm",
+                                        "Distance: ${distance.toStringAsFixed(5)} cm",
                                         style: TextStyle(
                                           background: Paint()
                                             ..color = colorPick,

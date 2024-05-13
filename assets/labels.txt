@@ -31,7 +31,7 @@ backpack
 ???
 bag
 ???
-suitcase
+object
 fan
 ???
 ???
@@ -61,7 +61,7 @@ pizza
 object
 object
 chair
-couch
+table
 plant
 bed
 ???
@@ -70,7 +70,7 @@ table
 ???
 object
 ???
-tv
+board
 laptop
 mouse
 object

@@ -188,7 +188,7 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
         });
         connection!.input!.listen((Uint8List data) {
           blue = ascii.decode(data);
-          show('Data incoming: ${ascii.decode(data)}');
+          show('Sensor Detect Obstacle');
         }).onDone(() {
           if (isDisconnecting) {
             show('Disconnecting locally!');

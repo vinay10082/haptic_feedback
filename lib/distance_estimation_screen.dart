@@ -35,19 +35,18 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
 
   bool isDisconnecting = false;
 
-  //we use this to on/off the device
-  late int _deviceState;
-
   List<BluetoothDevice> _devicesList = [];
   BluetoothDevice? _device;
   bool _connected = false;
   bool _isButtonUnavailable = true;
 
+  late String blue = "";
+
   void playVoice(String s) async {
     await flutterTts.setLanguage('en-US');
-    await flutterTts.setSpeechRate(0.7);
+    await flutterTts.setSpeechRate(0.8);
     await flutterTts.setVolume(1.0);
-    await flutterTts.setPitch(1.0);
+    await flutterTts.setPitch(0.3);
     await flutterTts.speak(s);
   }
 
@@ -188,7 +187,8 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
           connection = newConnection;
         });
         connection!.input!.listen((Uint8List data) {
-          print('>>>>>>>>Data incoming: ${ascii.decode(data)}');
+          blue = ascii.decode(data);
+          show('Data incoming: ${ascii.decode(data)}');
         }).onDone(() {
           if (isDisconnecting) {
             show('Disconnecting locally!');
@@ -238,7 +238,6 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
         _bluetoothState = state;
       });
     });
-    _deviceState = 1;
     enableBluetooth();
     FlutterBluetoothSerial.instance
         .onStateChanged()
@@ -291,136 +290,120 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                     )),
                 backgroundColor: const Color(0xFFD8C465),
                 centerTitle: true, // Center the title
-                actions: <Widget>[
-                  IconButton(
-                    icon: const Icon(
-                      Icons.youtube_searched_for_outlined,
-                      color: Colors.white,
-                    ),
-                    tooltip: 'Refresh',
-                    splashRadius: 30,
-                    splashColor: const Color(0xFFD8C465),
-                    onPressed: () async {
-                      await getPairedDevices().then((_) {
-                        show('Device list refreshed');
-                      });
-                    },
-                  ),
-                ],
                 iconTheme: const IconThemeData(
                   color: Colors.white, // Change this to white
                 )),
             backgroundColor: Colors.black,
             body: SlidingUpPanel(
-              minHeight: 50,
+              minHeight: 30,
               maxHeight: screen.height / 3,
+              borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(100.0),
+                  topRight: Radius.circular(100.0)),
               panel: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Visibility(
-                    visible: _isButtonUnavailable == false &&
-                        _bluetoothState == BluetoothState.STATE_ON,
-                    child: const LinearProgressIndicator(
-                      backgroundColor: Colors.white,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                    ),
-                  ),
-                  Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: (isConnected)
-                          ? Row(
-                              children: <Widget>[
-                                Expanded(
-                                  child: Text(
-                                    "${_device!.name}",
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        color: Colors.green.shade700),
-                                  ),
-                                ),
-                                TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _deviceState =
-                                            (_deviceState == 1) ? 0 : 1;
-                                      });
-                                    },
-                                    child: (_deviceState == 1)
-                                        ? const Text("ON",
-                                            style:
-                                                TextStyle(color: Colors.green))
-                                        : const Text("OFF",
-                                            style:
-                                                TextStyle(color: Colors.red))),
-                              ],
-                            )
-                          : const Center(
-                              child: Text('No Device Connected',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 20)))),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        const Text(
-                          'Paired Devices:',
+                  Center(
+                      child: Text(
+                          isConnected
+                              ? '${_device!.name}'
+                              : 'No Device Connected',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                              color: isConnected ? Colors.green : Colors.grey,
+                              fontSize: 20,
+                              fontWeight: isConnected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal))),
+                  Column(
+                    children: <Widget>[
+                      const Text(
+                        'Paired Devices:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      DropdownButton(
+                        items: _getDeviceItems(),
+                        onChanged: (value) {
+                          setState(() => _device = value as BluetoothDevice);
+                        },
+                        value: _devicesList.isNotEmpty ? _device : null,
+                      ),
+                      ElevatedButton(
+                        onPressed: (_isButtonUnavailable)
+                            ? () {
+                                (_device == null)
+                                    ? show('No device selected')
+                                    : _connect();
+                              }
+                            : (_connected ? _disconnect : _connect),
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.all<Color>(
+                            const Color(0xFFD8C465),
                           ),
                         ),
-                        DropdownButton(
-                          items: _getDeviceItems(),
-                          onChanged: (value) {
-                            setState(() => _device = value as BluetoothDevice);
-                          },
-                          value: _devicesList.isNotEmpty ? _device : null,
+                        child: Text(
+                          _connected ? 'Disconnect' : 'Connect',
+                          style: const TextStyle(color: Colors.white),
                         ),
-                        ElevatedButton(
-                          onPressed: (_isButtonUnavailable)
-                              ? () {
-                                  (_device == null)
-                                      ? show('No device selected')
-                                      : _connect();
-                                }
-                              : (_connected ? _disconnect : _connect),
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.all<Color>(
-                              const Color(0xFFD8C465),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    children: <Widget>[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const Text(
+                            "Device not paired ?",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
                             ),
                           ),
-                          child: Text(
-                            _connected ? 'Disconnect' : 'Connect',
-                            style: const TextStyle(color: Colors.white),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.bluetooth_audio_rounded,
+                              color: Color.fromRGBO(239, 154, 154, 1),
+                            ),
+                            tooltip: 'Bluetooth Settings',
+                            splashRadius: 30,
+                            splashColor: Colors.grey,
+                            onPressed: () async {
+                              await FlutterBluetoothSerial.instance
+                                  .openSettings();
+                            },
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const Text(
+                            "Already paired, but not found ?",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.youtube_searched_for_outlined,
+                              color: Color.fromRGBO(239, 154, 154, 1),
+                            ),
+                            tooltip: 'Refresh',
+                            splashRadius: 30,
+                            splashColor: Colors.grey,
+                            onPressed: () async {
+                              await getPairedDevices().then((_) {
+                                show('Device list refreshed');
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        const Text(
-                          "If you cannot find the device in the list, please pair the device by going to the bluetooth settings",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFD8C465),
-                          ),
-                        ),
-                        TextButton(
-                          child: const Text(
-                            "Bluetooth Settings",
-                            style: TextStyle(color: Colors.red),
-                          ),
-                          onPressed: () {
-                            FlutterBluetoothSerial.instance.openSettings();
-                          },
-                        ),
-                      ],
-                    ),
-                  )
                 ],
               ),
               body: Container(
@@ -430,13 +413,13 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                     Size size = MediaQuery.of(context).size;
                     Color colorPick = Colors.green;
 
-                    double x = value.maxObstacleProbLeft/size.width;
-                    double y = value.maxObstacleProbTop/size.height;
-                    double distance =  sqrt(x*x + y*y)*100 + 5;
+                    double x = value.maxObstacleProbLeft / size.width;
+                    double y = value.maxObstacleProbTop / size.height;
+                    double distance = sqrt(x * x + y * y) * 100 + 5;
 
-                    if ((distance <= 35 && distance >= 10) || value.maxObstacleProbHeight >= size.height - 130) {
+                    if (blue != "" || value.maxObstacleProbHeight >= size.height - 200) {
                       colorPick = Colors.red;
-
+                      blue = "";
                       if (value.maxObstacleProbLeft >= (size.width / 2) &&
                           value.maxObstacleProbWidth <= (size.width / 2)) {
                         playVoice('${value.obstacle} in right, please go left');
@@ -450,7 +433,7 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                     return Stack(children: [
                       SizedBox(
                         width: size.width,
-                        height: size.height - 130,
+                        height: size.height,
                         child: AspectRatio(
                           aspectRatio: _cameraController.value.aspectRatio,
                           child: CameraPreview(_cameraController),
@@ -460,7 +443,7 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                           left: value.maxObstacleProbLeft,
                           top: value.maxObstacleProbTop,
                           width: value.maxObstacleProbWidth,
-                          height: value.maxObstacleProbHeight - 150,
+                          height: value.maxObstacleProbHeight,
                           child: Container(
                               decoration: BoxDecoration(
                                 border:
@@ -474,8 +457,7 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                                       style: TextStyle(
                                         background: Paint()..color = colorPick,
                                         color: Colors.white,
-                                        fontSize:
-                                            value.maxObstacleProbWidth / 20,
+                                        fontSize: value.maxObstacleProbWidth / 35,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -485,11 +467,19 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                                           background: Paint()
                                             ..color = colorPick,
                                           color: Colors.white,
-                                          fontSize:
-                                              value.maxObstacleProbWidth / 20,
+                                          fontSize: value.maxObstacleProbWidth / 35,
                                           fontWeight: FontWeight.bold,
                                         ))
                                   ]))),
+                      Visibility(
+                        visible: _isButtonUnavailable == false &&
+                            _bluetoothState == BluetoothState.STATE_ON,
+                        child: const LinearProgressIndicator(
+                          backgroundColor: Colors.white,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.grey),
+                        ),
+                      ),
                     ]);
                   })),
             )),

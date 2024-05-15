@@ -5,8 +5,6 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import 'package:haptic_feedback/providers/obstacle_detection_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:tflite_v2/tflite_v2.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -25,6 +23,14 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
   List<dynamic> recognitionsList = [];
   late FlutterTts flutterTts;
   late Size screen;
+  late Color colorPick = Colors.green;
+  late double maxObstacleProb = 0.0;
+  late double maxObstacleProbHeight = 0.0;
+  late double maxObstacleProbWidth = 0.0;
+  late double maxObstacleProbTop = 0.0;
+  late double maxObstacleProbLeft = 0.0;
+  late String obstacle = "obstacle";
+  late double distance = 0.0;
 
   //Bluetooth variables
   BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
@@ -57,12 +63,20 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
     setState(() {
       _cameraControllerInitialise = true;
     });
-      var cameraCount = 0;
-      _cameraController.startImageStream((CameraImage image) {
-        if (cameraCount % 50 == 0) {
-          runModel(image);
-        }
-        cameraCount++;
+    var cameraCount = 0;
+    _cameraController.startImageStream((CameraImage image) {
+      if (cameraCount % 50 == 0) {
+        runModel(image);
+      }
+      cameraCount++;
+      //again initialize the parameters
+      colorPick = Colors.green;
+      maxObstacleProb = 0.0;
+      maxObstacleProbHeight = 0.0;
+      maxObstacleProbWidth = 0.0;
+      maxObstacleProbTop = 0.0;
+      maxObstacleProbLeft = 0.0;
+      obstacle = "obstacle";
     });
   }
 
@@ -83,12 +97,6 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
     });
 
     //finding obstacle in image
-    double maxObstacleProb = 0.0;
-    double maxObstacleProbHeight = 0.0;
-    double maxObstacleProbWidth = 0.0;
-    double maxObstacleProbTop = 0.0;
-    double maxObstacleProbLeft = 0.0;
-    String obstacle = "obstacle";
 
     for (dynamic result in recognitionsList) {
       if (maxObstacleProb < result['confidenceInClass']) {
@@ -102,17 +110,19 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
       }
     }
 
-    // Call updateDetection method of the ObstacleDetectionProvider
-    if (mounted) {
-      Provider.of<ObstacleDetectionProvider>(context, listen: false)
-          .updateDetection(
-        maxObstacleProb,
-        maxObstacleProbHeight,
-        maxObstacleProbWidth,
-        maxObstacleProbTop,
-        maxObstacleProbLeft,
-        obstacle,
-      );
+    // Call the Detection method
+    if (blue != "" || maxObstacleProbHeight >= screen.height - 200) {
+      colorPick = Colors.red;
+      blue = "";
+      if (maxObstacleProbLeft >= (screen.width / 2) &&
+          maxObstacleProbWidth <= (screen.width / 2)) {
+        playVoice('$obstacle in right, please go left');
+      } else if (maxObstacleProbLeft <= 10 &&
+          maxObstacleProbWidth <= (screen.width / 2)) {
+        playVoice('$obstacle in left, please go right');
+      } else {
+        playVoice('Please stop, $obstacle ahead');
+      }
     }
   }
 
@@ -203,7 +213,6 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
             setState(() {});
           }
         });
-        // Timer(const Duration(milliseconds: 20), () => _listenForData(connection!));
       } catch (error) {
         print('>>>>>>>Cannot connect, exception occurred');
         print('>>>>>>>$error');
@@ -279,9 +288,12 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
       );
     } else {
       screen = MediaQuery.of(context).size;
+      double x = maxObstacleProbLeft / screen.width;
+      double y = maxObstacleProbTop / screen.height;
+      double distance = sqrt(x * x + y * y) * 100 + 5;
       return ScaffoldMessenger(
-        key: _scaffoldKey,
-        child: Scaffold(
+          key: _scaffoldKey,
+          child: Scaffold(
             appBar: AppBar(
                 title: const Text("Obstacle Detector",
                     style: TextStyle(
@@ -406,84 +418,56 @@ class _detectNearObjScreenState extends State<detectNearObjScreen> {
                   ),
                 ],
               ),
-              body: Container(
-                  color: Colors.black,
-                  child: Consumer<ObstacleDetectionProvider>(
-                      builder: (context, value, _) {
-                    Size size = MediaQuery.of(context).size;
-                    Color colorPick = Colors.green;
-
-                    double x = value.maxObstacleProbLeft / size.width;
-                    double y = value.maxObstacleProbTop / size.height;
-                    double distance = sqrt(x * x + y * y) * 100 + 5;
-
-                    if (blue != "" || value.maxObstacleProbHeight >= size.height - 200) {
-                      colorPick = Colors.red;
-                      blue = "";
-                      if (value.maxObstacleProbLeft >= (size.width / 2) &&
-                          value.maxObstacleProbWidth <= (size.width / 2)) {
-                        playVoice('${value.obstacle} in right, please go left');
-                      } else if (value.maxObstacleProbLeft <= 10 &&
-                          value.maxObstacleProbWidth <= (size.width / 2)) {
-                        playVoice('${value.obstacle} in left, please go right');
-                      } else {
-                        playVoice('Please stop, ${value.obstacle} ahead');
-                      }
-                    }
-                    return Stack(children: [
-                      SizedBox(
-                        width: size.width,
-                        height: size.height,
-                        child: AspectRatio(
-                          aspectRatio: _cameraController.value.aspectRatio,
-                          child: CameraPreview(_cameraController),
+              body: Stack(children: [
+                SizedBox(
+                  width: screen.width,
+                  height: screen.height,
+                  child: AspectRatio(
+                    aspectRatio: _cameraController.value.aspectRatio,
+                    child: CameraPreview(_cameraController),
+                  ),
+                ),
+                Positioned(
+                    left: maxObstacleProbLeft,
+                    top: maxObstacleProbTop,
+                    width: maxObstacleProbWidth,
+                    height: maxObstacleProbHeight,
+                    child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: colorPick, width: 3.0),
                         ),
-                      ),
-                      Positioned(
-                          left: value.maxObstacleProbLeft,
-                          top: value.maxObstacleProbTop,
-                          width: value.maxObstacleProbWidth,
-                          height: value.maxObstacleProbHeight,
-                          child: Container(
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(color: colorPick, width: 3.0),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "$obstacle ${(maxObstacleProb * 100).toStringAsFixed(0)}%",
+                                style: TextStyle(
+                                  background: Paint()..color = colorPick,
+                                  color: Colors.white,
+                                  fontSize: maxObstacleProbWidth / 35,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "${value.obstacle} ${(value.maxObstacleProb * 100).toStringAsFixed(0)}%",
-                                      style: TextStyle(
-                                        background: Paint()..color = colorPick,
-                                        color: Colors.white,
-                                        fontSize: value.maxObstacleProbWidth / 35,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                        "Distance: ${distance.toStringAsFixed(5)} cm",
-                                        style: TextStyle(
-                                          background: Paint()
-                                            ..color = colorPick,
-                                          color: Colors.white,
-                                          fontSize: value.maxObstacleProbWidth / 35,
-                                          fontWeight: FontWeight.bold,
-                                        ))
-                                  ]))),
-                      Visibility(
-                        visible: _isButtonUnavailable == false &&
-                            _bluetoothState == BluetoothState.STATE_ON,
-                        child: const LinearProgressIndicator(
-                          backgroundColor: Colors.white,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.grey),
-                        ),
-                      ),
-                    ]);
-                  })),
-            )),
-      );
+                              Text(
+                                  "Distance: ${distance.toStringAsFixed(5)} cm",
+                                  style: TextStyle(
+                                    background: Paint()..color = colorPick,
+                                    color: Colors.white,
+                                    fontSize: maxObstacleProbWidth / 35,
+                                    fontWeight: FontWeight.bold,
+                                  ))
+                            ]))),
+                Visibility(
+                  visible: _isButtonUnavailable == false &&
+                      _bluetoothState == BluetoothState.STATE_ON,
+                  child: const LinearProgressIndicator(
+                    backgroundColor: Colors.white,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                  ),
+                ),
+              ]),
+            ),
+          ));
     }
   }
 }

@@ -67,7 +67,7 @@ class HomeScreen extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                               builder: (context) =>
-                                  const detectNearObjScreen()),
+                                  const DetectNearObjScreen()),
                         );
                       } else {
                         await bluetooth.requestEnable();

@@ -112,10 +112,13 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
       }
     }
     //distance estimation
+    //y = mx + c (approx)
+    //y --- distance
+    //x --- width of object in image
+    _objectParam.value.distance = (screen.width - ((_objectParam.value.maxObstacleProbWidth * screen.width) / 500)) - 100;
 
     // Call the Detection method on crossing threshold
-    if (blue != "" ||
-        _objectParam.value.maxObstacleProbHeight >= screen.height - 200) {
+    if (blue != "" || _objectParam.value.distance <= 180) {
       _objectParam.value.colorPick = Colors.red;
       blue = "";
 
@@ -416,7 +419,7 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
                                   style: TextStyle(
                                     background: Paint()..color = value.colorPick,
                                     color: Colors.white,
-                                    fontSize: value.maxObstacleProbWidth / 35,
+                                    fontSize: value.maxObstacleProbWidth / 20,
                                     fontWeight: FontWeight.bold,
                                   )),
                               Text(
@@ -425,7 +428,7 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
                                     background: Paint()
                                       ..color = value.colorPick,
                                     color: Colors.white,
-                                    fontSize: value.maxObstacleProbWidth / 35,
+                                    fontSize: value.maxObstacleProbWidth / 10,
                                     fontWeight: FontWeight.bold,
                                   )),
                             ],

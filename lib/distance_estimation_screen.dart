@@ -118,9 +118,9 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
     _objectParam.value.distance = (screen.width - ((_objectParam.value.maxObstacleProbWidth * screen.width) / 500)) - 100;
 
     // Call the Detection method on crossing threshold
-    if (blue != "" || _objectParam.value.distance <= 180) {
-      _objectParam.value.colorPick = Colors.red;
+    if (blue != "" || _objectParam.value.distance <= 60) {
       blue = "";
+      _objectParam.value.colorPick = Colors.red;
 
       if (_objectParam.value.maxObstacleProbLeft >= (screen.width / 2) &&
           _objectParam.value.maxObstacleProbWidth <= (screen.width / 2)) {

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -54,7 +53,7 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
 
   Future<void> setupCamera() async {
     final cameras = await availableCameras();
-    _cameraController = CameraController(cameras.first, ResolutionPreset.low);
+    _cameraController = CameraController(cameras.first, ResolutionPreset.max);
     await _cameraController.initialize();
     setState(() {
       _cameraControllerInitialise = true;
@@ -101,9 +100,9 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
       if (_objectParam.value.maxObstacleProb < result['confidenceInClass']) {
         _objectParam.value = ObjectParam(
           maxObstacleProb: result['confidenceInClass'],
-          maxObstacleProbHeight: result["rect"]["h"] * screen.height,
-          maxObstacleProbWidth: result["rect"]["h"] * screen.height,
-          maxObstacleProbTop: result["rect"]["y"] * screen.height,
+          maxObstacleProbHeight: result["rect"]["h"] * (screen.height - 100),
+          maxObstacleProbWidth: result["rect"]["w"] * screen.width,
+          maxObstacleProbTop: result["rect"]["y"] * (screen.height - 100),
           maxObstacleProbLeft: result["rect"]["x"] * screen.width,
           obstacle: result['detectedClass'].toString(),
         );
@@ -112,11 +111,9 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
         }
       }
     }
-    double x = _objectParam.value.maxObstacleProbLeft / screen.width;
-    double y = _objectParam.value.maxObstacleProbLeft / screen.height;
-    _objectParam.value.distance = sqrt(x * x + y * y) * 100 + 5;
+    //distance estimation
 
-    // Call the Detection method
+    // Call the Detection method on crossing threshold
     if (blue != "" ||
         _objectParam.value.maxObstacleProbHeight >= screen.height - 200) {
       _objectParam.value.colorPick = Colors.red;
@@ -283,9 +280,9 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print("build ${DateTime.now()}");
     screen = MediaQuery.of(context).size;
 
+    print(">>>>>>>>build ${DateTime.now()}");
     return ScaffoldMessenger(
       key: _scaffoldKey,
       child: Scaffold(
@@ -302,11 +299,10 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
             )),
         backgroundColor: Colors.black,
         body: SlidingUpPanel(
-          minHeight: 30,
+          minHeight: 40,
           maxHeight: screen.height / 3,
           borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(100.0),
-              topRight: Radius.circular(100.0)),
+              topLeft: Radius.circular(20.0), topRight: Radius.circular(20.0)),
           panel: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
@@ -321,6 +317,7 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
                             fontWeight: isConnected
                                 ? FontWeight.bold
                                 : FontWeight.normal))),
+                const SizedBox(height: 10),
                 Column(children: <Widget>[
                   const Text(
                     'Paired Devices:',
@@ -400,13 +397,7 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
               ]),
           body: (_cameraControllerInitialise == true)
               ? Stack(children: [
-                  SizedBox(
-                      width: screen.width,
-                      height: screen.height,
-                      child: AspectRatio(
-                        aspectRatio: _cameraController.value.aspectRatio,
-                        child: CameraPreview(_cameraController),
-                      )),
+                  CameraPreview(_cameraController),
                   ValueListenableBuilder(
                     valueListenable: _objectParam,
                     builder: (context, value, child) {
@@ -433,7 +424,7 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
                                     fontWeight: FontWeight.bold,
                                   )),
                               Text(
-                                  "Distance: ${value.distance.toStringAsFixed(5)} cm",
+                                  "Distance: ${value.distance.toStringAsFixed(2)} cm",
                                   style: TextStyle(
                                     background: Paint()
                                       ..color = value.colorPick,

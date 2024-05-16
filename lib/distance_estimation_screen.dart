@@ -391,10 +391,7 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
                               await getPairedDevices().then((_) {
                                 show('Device list refreshed');
                               });
-                            }),
-                      ]),
-                ]),
-              ]),
+                            })])])]),
           body: (_cameraControllerInitialise == true)
               ? Stack(children: [
                   CameraPreview(_cameraController),
@@ -417,8 +414,7 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
                               Text(
                                   "${value.obstacle} ${(value.maxObstacleProb * 100).toStringAsFixed(0)}%",
                                   style: TextStyle(
-                                    background: Paint()
-                                      ..color = value.colorPick,
+                                    background: Paint()..color = value.colorPick,
                                     color: Colors.white,
                                     fontSize: value.maxObstacleProbWidth / 35,
                                     fontWeight: FontWeight.bold,

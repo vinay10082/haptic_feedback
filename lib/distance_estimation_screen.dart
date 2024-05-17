@@ -115,7 +115,9 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
     //y = mx + c (approx)
     //y --- distance
     //x --- width of object in image
-    _objectParam.value.distance = (screen.width - ((_objectParam.value.maxObstacleProbWidth * screen.width) / 500)) - 100;
+    _objectParam.value.distance = (screen.width -
+            ((_objectParam.value.maxObstacleProbWidth * screen.width) / 500)) -
+        100;
 
     // Call the Detection method on crossing threshold
     if (blue != "" || _objectParam.value.distance <= 60) {
@@ -394,7 +396,10 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
                               await getPairedDevices().then((_) {
                                 show('Device list refreshed');
                               });
-                            })])])]),
+                            })
+                      ])
+                ])
+              ]),
           body: (_cameraControllerInitialise == true)
               ? Stack(children: [
                   CameraPreview(_cameraController),
@@ -417,7 +422,8 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
                               Text(
                                   "${value.obstacle} ${(value.maxObstacleProb * 100).toStringAsFixed(0)}%",
                                   style: TextStyle(
-                                    background: Paint()..color = value.colorPick,
+                                    background: Paint()
+                                      ..color = value.colorPick,
                                     color: Colors.white,
                                     fontSize: value.maxObstacleProbWidth / 20,
                                     fontWeight: FontWeight.bold,
@@ -428,7 +434,7 @@ class _DetectNearObjScreenState extends State<DetectNearObjScreen> {
                                     background: Paint()
                                       ..color = value.colorPick,
                                     color: Colors.white,
-                                    fontSize: value.maxObstacleProbWidth / 10,
+                                    fontSize: value.maxObstacleProbWidth / 20,
                                     fontWeight: FontWeight.bold,
                                   )),
                             ],

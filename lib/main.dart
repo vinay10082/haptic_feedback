@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:haptic_feedback/distance_estimation_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-void main() {
+void main() async {
+  var widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   runApp(MyApp());
 }
 
@@ -12,6 +17,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Timer(const Duration(seconds: 2), () {FlutterNativeSplash.remove();});
     return const MaterialApp(
           title: 'Blind Helper',
           home: HomeScreen(),
